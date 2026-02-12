@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Verification Required 💘</title>
+  <style>
+    :root{
+      --bg:#0b0b10; --stroke:rgba(255,255,255,.14);
+      --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.68);
+      --yes1:#ff3ea5; --yes2:#ffcc70;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(255,62,165,.25), transparent 60%),
+        radial-gradient(900px 600px at 80% 30%, rgba(255,204,112,.18), transparent 55%),
+        var(--bg);
+      overflow-x:hidden;
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:18px}
+    .screen{display:none;min-height:100vh;align-items:center}
+    .screen.active{display:flex}
+    .card{
+      width:100%; border-radius:24px; padding:18px; position:relative; overflow:hidden;
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid var(--stroke);
+      box-shadow:0 20px 60px rgba(0,0,0,.45);
+    }
+    h1{margin:6px 0 6px;font-size:28px}
+    p{margin:0 0 14px;color:var(--muted);line-height:1.4}
+    .badge{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      font-size:13px;margin-bottom:10px;
+    }
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+    .tile{
+      position:relative; border-radius:16px; overflow:hidden;
+      aspect-ratio:1/1; cursor:pointer;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+    .tile:hover{transform:scale(1.01)}
+    .tile img{width:100%;height:100%;object-fit:cover;display:block}
+    .tile.selected{
+      border-color: rgba(255, 62, 165, .75);
+      box-shadow:0 0 0 3px rgba(255,62,165,.25) inset;
+    }
+    .check{
+      position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;
+      display:grid;place-items:center;font-weight:900;
+      background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.2);
+      opacity:0;transform:scale(.9);transition:.12s ease;
+    }
+    .tile.selected .check{opacity:1;transform:scale(1)}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+    button{
+      border:0; cursor:pointer; border-radius:16px; padding:12px 16px; font-weight:800;
+      color:rgba(255,255,255,.92);
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      transition:transform .12s ease, opacity .12s ease;
+    }
+    button:disabled{opacity:.45;cursor:not-allowed}
+    button:hover:not(:disabled){transform:translateY(-1px)}
+    .primary{
+      background:linear-gradient(90deg, rgba(255,62,165,.95), rgba(255,204,112,.9));
+      color:#1a0b14;border:0;
+    }
+    .msg{margin-left:auto;color:var(--muted);font-size:14px;min-height:18px}
+
+    /* Valentine screen */
+    .center{display:flex;align-items:center;justify-content:center}
+    .collage{position:absolute;inset:0;opacity:.35;pointer-events:none;filter:saturate(1.05) contrast(1.03)}
+    .collage img{
+      position:absolute;width:220px;height:220px;object-fit:cover;border-radius:22px;
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 18px 50px rgba(0,0,0,.35);
+      transform:rotate(var(--rot));
+    }
+    .overlay{
+      position:relative;padding:22px;border-radius:22px;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.14);
+      backdrop-filter:blur(8px);
+    }
+    .valTitle{font-size:34px;margin:0 0 10px}
+    .valSub{margin:0 0 18px;color:rgba(255,255,255,.74)}
+    .choiceRow{display:flex;gap:12px;flex-wrap:wrap}
+    .yesBtn{
+      background:linear-gradient(90deg, var(--yes1), var(--yes2));
+      color:#1a0b14;border:0;padding:14px 20px;font-size:16px;
+      box-shadow:0 14px 40px rgba(255,62,165,.20);
+    }
+    .noBtn{
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.55);
+      border:1px dashed rgba(255,255,255,.18);
+      padding:10px 14px;font-weight:700;filter:grayscale(1);opacity:.75;
+    }
+    .final{margin-top:14px;font-size:18px;font-weight:800;min-height:24px}
+
+    /* particles */
+    .particle{
+      position:fixed;left:0;top:0;width:14px;height:14px;pointer-events:none;
+      transform:translate(-50%,-50%);
+      animation:floatUp 1200ms ease-out forwards;opacity:.95;
+    }
+    @keyframes floatUp{
+      0%{transform:translate(-50%,-50%) scale(1);opacity:.95}
+      100%{transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.9);opacity:0}
+    }
+    @media (max-width:640px){
+      h1{font-size:24px}
+      .valTitle{font-size:28px}
+      .collage img{width:160px;height:160px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <section id="screenCaptcha" class="screen active">
+      <div class="card">
+        <div class="badge">🔒 Totally Legit Verification</div>
+        <h1>Identity Verification Required</h1>
+        <p id="captchaPrompt">
+          To confirm your identity, select all images of the <b>handsomest, smartest, funniest</b> guy you know.
+        </p>
+
+        <div id="grid" class="grid"></div>
+
+        <div class="row">
+          <button id="verifyBtn" class="primary" disabled>Verify ✅</button>
+          <button id="resetBtn">Reset</button>
+          <div id="captchaMsg" class="msg"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screenVal" class="screen">
+      <div class="card center" style="min-height:70vh">
+        <div id="collage" class="collage" aria-hidden="true"></div>
+        <div class="overlay">
+          <h2 class="valTitle">Will you be my Valentine? 💘</h2>
+          <p class="valSub">No pressure… but also yes pressure 😌</p>
+          <div class="choiceRow">
+            <button id="yesBtn" class="yesBtn">YES!! 💖</button>
+            <button id="noBtn" class="noBtn">No 😶</button>
+          </div>
+          <div id="finalMsg" class="final"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    /**************
+     * Put your image URLs here
+     * (For now these are placeholders. Replace with your own.)
+     **************/
+    const captchaImages = [
+      "https://picsum.photos/seed/me1/600",
+      "https://picsum.photos/seed/me2/600",
+      "https://picsum.photos/seed/me3/600",
+      "https://picsum.photos/seed/me4/600",
+      "https://picsum.photos/seed/me5/600",
+      "https://picsum.photos/seed/me6/600",
+      "https://picsum.photos/seed/me7/600",
+      "https://picsum.photos/seed/me8/600",
+      "https://picsum.photos/seed/me9/600"
+    ];
+
+    const coupleImages = [
+      "https://picsum.photos/seed/us1/800",
+      "https://picsum.photos/seed/us2/800",
+      "https://picsum.photos/seed/us3/800",
+      "https://picsum.photos/seed/us4/800",
+      "https://picsum.photos/seed/us5/800",
+      "https://picsum.photos/seed/us6/800",
+      "https://picsum.photos/seed/us7/800",
+      "https://picsum.photos/seed/us8/800"
+    ];
+
+    const REQUIRED_SELECTIONS = 9;
+
+    const screenCaptcha = document.getElementById("screenCaptcha");
+    const screenVal = document.getElementById("screenVal");
+    const grid = document.getElementById("grid");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const captchaMsg = document.getElementById("captchaMsg");
+    const collage = document.getElementById("collage");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const finalMsg = document.getElementById("finalMsg");
+
+    const selected = new Set();
+    let noCount = 0;
+
+    function shuffle(arr){
+      const a = [...arr];
+      for (let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
+      }
+      return a;
+    }
+
+    function renderCaptcha(){
+      grid.innerHTML = "";
+      selected.clear();
+      captchaMsg.textContent = "";
+      verifyBtn.disabled = true;
+
+      const imgs = shuffle(captchaImages);
+      imgs.forEach((src, idx) => {
+        const tile = document.createElement("button");
+        tile.className = "tile";
+        tile.type = "button";
+
+        tile.innerHTML = `
+          <img src="${src}" alt="verification image ${idx+1}" />
+          <div class="check">✓</div>
+        `;
+
+        tile.addEventListener("click", () => {
+          if (selected.has(idx)) {
+            selected.delete(idx);
+            tile.classList.remove("selected");
+          } else {
+            selected.add(idx);
+            tile.classList.add("selected");
+          }
+          verifyBtn.disabled = (selected.size === 0);
+        });
+
+        grid.appendChild(tile);
+      });
+    }
+
+    function buildCollage(){
+      collage.innerHTML = "";
+      const imgs = shuffle(coupleImages).slice(0, Math.min(10, coupleImages.length));
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+
+      imgs.forEach((src) => {
+        const img = document.createElement("img");
+        img.src = src;
+        const left = Math.random() * Math.max(20, (W - 260));
+        const top  = Math.random() * Math.max(20, (H - 260));
+        const rot  = (Math.random() * 18 - 9).toFixed(1) + "deg";
+        img.style.left = left + "px";
+        img.style.top = top + "px";
+        img.style.setProperty("--rot", rot);
+        collage.appendChild(img);
+      });
+    }
+
+    function popParticles(x, y, count=40){
+      const shapes = ["💖","💘","💝","🎈","✨","🎉","❤️"];
+      for (let i=0;i<count;i++){
+        const p = document.createElement("div");
+        p.className = "particle";
+        p.textContent = shapes[Math.floor(Math.random()*shapes.length)];
+        p.style.left = x + "px";
+        p.style.top  = y + "px";
+        const dx = (Math.random()*260 - 130).toFixed(0) + "px";
+        const dy = (Math.random()*-320 - 80).toFixed(0) + "px";
+        p.style.setProperty("--dx", dx);
+        p.style.setProperty("--dy", dy);
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1300);
+      }
+    }
+
+    verifyBtn.addEventListener("click", () => {
+      if (selected.size === REQUIRED_SELECTIONS) {
+        captchaMsg.textContent = "✅ Verified. (I knew it.)";
+        setTimeout(() => {
+          screenCaptcha.classList.remove("active");
+          screenVal.classList.add("active");
+          buildCollage();
+        }, 600);
+      } else {
+        captchaMsg.textContent = `Hmm… not quite 😏 (Selected ${selected.size}/${REQUIRED_SELECTIONS})`;
+      }
+    });
+
+    resetBtn.addEventListener("click", renderCaptcha);
+
+    yesBtn.addEventListener("click", () => {
+      finalMsg.textContent = "YAYYYYY 💞 You just made my whole day!!";
+      const rect = yesBtn.getBoundingClientRect();
+      popParticles(rect.left + rect.width/2, rect.top + rect.height/2, 70);
+      popParticles(window.innerWidth*0.2, window.innerHeight*0.25, 40);
+      popParticles(window.innerWidth*0.8, window.innerHeight*0.30, 40);
+      popParticles(window.innerWidth*0.5, window.innerHeight*0.15, 40);
+    });
+
+    noBtn.addEventListener("click", () => {
+      noCount++;
+      const messages = [
+        "Wait… what? 😳",
+        "Nice try 😌",
+        "That button seems… suspicious.",
+        "Okay but I still like you a lot 🥺",
+        "Reconsider? I put in emotional labor here 😂"
+      ];
+      finalMsg.textContent = messages[Math.min(noCount-1, messages.length-1)];
+
+      const dx = (Math.random()*180 - 90);
+      const dy = (Math.random()*120 - 60);
+      noBtn.style.transform = `translate(${dx}px, ${dy}px)`;
+      setTimeout(() => (noBtn.style.transform = ""), 450);
+
+      const r = noBtn.getBoundingClientRect();
+      popParticles(r.left + r.width/2, r.top + r.height/2, 18);
+    });
+
+    window.addEventListener("resize", () => {
+      if (screenVal.classList.contains("active")) buildCollage();
+    });
+
+    renderCaptcha();
+  </script>
+</body>
+</html>
