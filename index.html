@@ -246,23 +246,38 @@
     }
 
     function buildCollage(){
-      collage.innerHTML = "";
-      const imgs = shuffle(coupleImages).slice(0, Math.min(10, coupleImages.length));
-      const W = window.innerWidth;
-      const H = window.innerHeight;
+  collage.innerHTML = "";
 
-      imgs.forEach((src) => {
-        const img = document.createElement("img");
-        img.src = src;
-        const left = Math.random() * Math.max(20, (W - 260));
-        const top  = Math.random() * Math.max(20, (H - 260));
-        const rot  = (Math.random() * 18 - 9).toFixed(1) + "deg";
-        img.style.left = left + "px";
-        img.style.top = top + "px";
-        img.style.setProperty("--rot", rot);
-        collage.appendChild(img);
-      });
-    }
+  const imgs = shuffle(coupleImages).slice(0, Math.min(20, coupleImages.length));
+
+  // Use the collage area size (the card), not the whole window
+  const rect = collage.getBoundingClientRect();
+  const W = rect.width;
+  const H = rect.height;
+
+  // Dynamically size photos so more can fit
+  const size = Math.floor(
+    Math.min(220, Math.max(120, Math.sqrt((W * H) / (imgs.length * 1.8))))
+  );
+
+  imgs.forEach((src) => {
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = "";
+
+    const left = Math.random() * Math.max(0, (W - size));
+    const top  = Math.random() * Math.max(0, (H - size));
+    const rot  = (Math.random() * 18 - 9).toFixed(1) + "deg";
+
+    img.style.left = left + "px";
+    img.style.top  = top + "px";
+    img.style.width = size + "px";
+    img.style.height = size + "px";
+    img.style.setProperty("--rot", rot);
+
+    collage.appendChild(img);
+  });
+}
 
     function popParticles(x, y, count=40){
       const shapes = ["💖","💘","💝","🎈","✨","🎉","❤️"];
