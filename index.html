@@ -187,6 +187,7 @@ body.celebrate{
 
   </div>
 
+  <canvas id="fxCanvas"></canvas>
   <script>
     /**************
      * Put your image URLs here
@@ -345,10 +346,15 @@ body.celebrate{
 
     resetBtn.addEventListener("click", renderCaptcha);
 
-    yesBtn.addEventListener("click", () => {
+   yesBtn.addEventListener("click", () => {
   finalMsg.textContent = "YAYYYYY 💞 You just made my whole day!!";
   startCelebration();
+
+  const r = yesBtn.getBoundingClientRect();
+  // extra initial burst right at the button location:
+  popParticles(r.left + r.width/2, r.top + r.height/2, 120);
 });
+
 
 
     noBtn.addEventListener("click", () => {
@@ -607,6 +613,5 @@ function stopCelebration(){
 }
 
   </script>
-  <canvas id="fxCanvas"></canvas>
 </body>
 </html>
