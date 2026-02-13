@@ -121,6 +121,32 @@
       .valTitle{font-size:28px}
       .collage img{width:160px;height:160px}
     }
+
+    /* Full-screen celebration FX */
+#fxCanvas{
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100vh;
+  z-index:9999;
+  pointer-events:none;
+  display:none;
+}
+
+/* Make the whole page feel like “EVENT MODE” */
+body.celebrate{
+  animation: bgPulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes bgPulse{
+  from { filter: saturate(1.05) brightness(1.00); }
+  to   { filter: saturate(1.35) brightness(1.10); }
+}
+
+.overlay.celebrateGlow{
+  box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 0 60px rgba(255,62,165,.25);
+}
+
   </style>
 </head>
 <body>
@@ -320,13 +346,10 @@
     resetBtn.addEventListener("click", renderCaptcha);
 
     yesBtn.addEventListener("click", () => {
-      finalMsg.textContent = "YAYYYYY 💞 You just made my whole day!!";
-      const rect = yesBtn.getBoundingClientRect();
-      popParticles(rect.left + rect.width/2, rect.top + rect.height/2, 70);
-      popParticles(window.innerWidth*0.2, window.innerHeight*0.25, 40);
-      popParticles(window.innerWidth*0.8, window.innerHeight*0.30, 40);
-      popParticles(window.innerWidth*0.5, window.innerHeight*0.15, 40);
-    });
+  finalMsg.textContent = "YAYYYYY 💞 You just made my whole day!!";
+  startCelebration();
+});
+
 
     noBtn.addEventListener("click", () => {
       noCount++;
@@ -353,6 +376,237 @@
     });
 
     renderCaptcha();
+    // ======= FULLSCREEN CELEBRATION FX (fireworks + hearts) =======
+const fxCanvas = document.getElementById("fxCanvas");
+const fxCtx = fxCanvas.getContext("2d");
+
+let fxRunning = false;
+let rockets = [];
+let sparks = [];
+let hearts = [];
+let burstTimer = null;
+
+function resizeFx(){
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  fxCanvas.width = Math.floor(window.innerWidth * dpr);
+  fxCanvas.height = Math.floor(window.innerHeight * dpr);
+  fxCanvas.style.width = window.innerWidth + "px";
+  fxCanvas.style.height = window.innerHeight + "px";
+  fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener("resize", resizeFx);
+
+function rand(min, max){ return Math.random() * (max - min) + min; }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+const heartChars = ["💖","💘","💝","❤️","✨","🎉","🎈"];
+const fireColors = [
+  "rgba(255,62,165,",
+  "rgba(255,204,112,",
+  "rgba(120,220,255,",
+  "rgba(170,255,140,",
+  "rgba(255,120,120,"
+];
+
+// Rocket that flies up then explodes
+function launchRocket(){
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  rockets.push({
+    x: rand(W * 0.15, W * 0.85),
+    y: H + 10,
+    vx: rand(-0.6, 0.6),
+    vy: rand(-10, -13),
+    targetY: rand(H * 0.15, H * 0.45),
+    color: pick(fireColors),
+    life: 0
+  });
+}
+
+function explode(x, y){
+  const base = pick(fireColors);
+  const count = Math.floor(rand(70, 120));
+
+  for (let i=0; i<count; i++){
+    const a = rand(0, Math.PI * 2);
+    const s = rand(2, 7);
+    sparks.push({
+      x, y,
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s,
+      g: 0.12,
+      drag: 0.985,
+      alpha: 1,
+      decay: rand(0.010, 0.018),
+      radius: rand(1.2, 2.4),
+      color: base
+    });
+  }
+
+  // Extra heart burst
+  for (let i=0; i<18; i++){
+    hearts.push({
+      x, y,
+      vx: rand(-3.5, 3.5),
+      vy: rand(-6.5, -2.0),
+      rot: rand(-0.5, 0.5),
+      vr: rand(-0.03, 0.03),
+      size: rand(16, 30),
+      alpha: 1,
+      decay: rand(0.010, 0.018),
+      ch: pick(heartChars)
+    });
+  }
+}
+
+// Continuous heart rain
+function spawnHeartRain(){
+  const W = window.innerWidth;
+  hearts.push({
+    x: rand(0, W),
+    y: -20,
+    vx: rand(-0.7, 0.7),
+    vy: rand(1.6, 3.6),
+    rot: rand(-0.8, 0.8),
+    vr: rand(-0.02, 0.02),
+    size: rand(18, 34),
+    alpha: 1,
+    decay: rand(0.002, 0.005),
+    ch: pick(heartChars)
+  });
+}
+
+function fxLoop(){
+  if (!fxRunning) return;
+
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+
+  // Fade the canvas slightly each frame for trails
+  fxCtx.fillStyle = "rgba(0,0,0,0.18)";
+  fxCtx.fillRect(0, 0, W, H);
+
+  // Rockets
+  for (let i=rockets.length-1; i>=0; i--){
+    const r = rockets[i];
+    r.life++;
+
+    r.x += r.vx;
+    r.y += r.vy;
+    r.vy += 0.08; // gravity slows ascent
+
+    // draw rocket trail
+    fxCtx.beginPath();
+    fxCtx.arc(r.x, r.y, 2.2, 0, Math.PI*2);
+    fxCtx.fillStyle = r.color + "1)";
+    fxCtx.fill();
+
+    // explode at target
+    if (r.y <= r.targetY || r.vy >= -1){
+      explode(r.x, r.y);
+      rockets.splice(i, 1);
+    }
+  }
+
+  // Sparks (firework particles)
+  for (let i=sparks.length-1; i>=0; i--){
+    const p = sparks[i];
+    p.vx *= p.drag;
+    p.vy *= p.drag;
+    p.vy += p.g;
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+    p.alpha -= p.decay;
+
+    if (p.alpha <= 0){
+      sparks.splice(i, 1);
+      continue;
+    }
+
+    fxCtx.beginPath();
+    fxCtx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+    fxCtx.fillStyle = p.color + p.alpha + ")";
+    fxCtx.fill();
+  }
+
+  // Hearts (burst + rain)
+  // add a few per frame for “WOW”
+  for (let k=0; k<3; k++) spawnHeartRain();
+
+  for (let i=hearts.length-1; i>=0; i--){
+    const h = hearts[i];
+    h.x += h.vx;
+    h.y += h.vy;
+    h.rot += h.vr;
+    h.alpha -= h.decay;
+
+    if (h.alpha <= 0 || h.y > H + 40){
+      hearts.splice(i, 1);
+      continue;
+    }
+
+    fxCtx.save();
+    fxCtx.globalAlpha = Math.max(0, h.alpha);
+    fxCtx.translate(h.x, h.y);
+    fxCtx.rotate(h.rot);
+    fxCtx.font = `${h.size}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+    fxCtx.fillText(h.ch, -h.size/2, h.size/2);
+    fxCtx.restore();
+  }
+
+  requestAnimationFrame(fxLoop);
+}
+
+function startCelebration(){
+  // Show canvas + start loop
+  resizeFx();
+  fxCanvas.style.display = "block";
+  fxRunning = true;
+
+  // Make the whole page feel alive
+  document.body.classList.add("celebrate");
+  document.querySelector(".overlay")?.classList.add("celebrateGlow");
+
+  // Kick off big opening barrage
+  for (let i=0; i<6; i++) setTimeout(launchRocket, i * 140);
+
+  // Keep launching fireworks periodically
+  burstTimer = setInterval(() => {
+    launchRocket();
+    if (Math.random() < 0.55) launchRocket();
+  }, 420);
+
+  // Start render
+  fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  requestAnimationFrame(fxLoop);
+
+  // Optional: auto-stop after 14 seconds (comment out if you want it nonstop)
+  setTimeout(stopCelebration, 14000);
+}
+
+function stopCelebration(){
+  fxRunning = false;
+  if (burstTimer) clearInterval(burstTimer);
+  burstTimer = null;
+
+  // Let remaining trails fade for a moment, then hide
+  setTimeout(() => {
+    fxCanvas.style.display = "none";
+    fxCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  }, 800);
+
+  document.body.classList.remove("celebrate");
+  document.querySelector(".overlay")?.classList.remove("celebrateGlow");
+
+  rockets = [];
+  sparks = [];
+  hearts = [];
+}
+
   </script>
+  <canvas id="fxCanvas"></canvas>
 </body>
 </html>
